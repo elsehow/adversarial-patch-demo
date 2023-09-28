@@ -5,6 +5,8 @@ from tensorflow import keras
 from keras.applications.vgg16 import preprocess_input
 from tensorflow.keras.applications.vgg16 import decode_predictions
 
+from rich.progress import Progress
+
 size = 4
 webcam = cv2.VideoCapture(0)
 
@@ -18,8 +20,9 @@ vgg16 = keras.applications.VGG16(
     classifier_activation="softmax",
 )
 
-i = 0
-n = 100
+# predict every n rames
+n = 32
+i = 0 # counter for frame prediction
 
 # vgg size
 width = 224
@@ -30,6 +33,15 @@ x1 = 300
 y1 = x1
 x2 = x1+width
 y2 = y1+height
+
+# text
+font                   = cv2.FONT_HERSHEY_SIMPLEX
+bottomLeftCornerOfText = (x1,y1)
+fontScale              = 1
+fontColor              = (0,0,0)
+thickness              = 3
+lineType               = 2
+lastLabel = ''
 
 while True:
 	i+=1
@@ -47,14 +59,28 @@ while True:
 	
 		# Predict
 		preds = vgg16.predict(x)
-		preds = decode_predictions(preds, top=3)[0]
+		preds = decode_predictions(preds, top=5)[0]
 		os.system('clear')
-		for pred in preds:
-			category = pred[1]
-			prob = pred[2]
-			print(category, "-" * int(prob*100))
+		with Progress() as progress:
+			bars = []
+			for i, pred in enumerate(preds):
+				category = pred[1]
+				prob = pred[2]
+				# set bars for console
+				task = progress.add_task(category, total=1)
+				progress.update(task,advance=prob)
+				# look at the top pred for setting text
+				if i == 0:
+					lastLabel = f"{category} {prob:.0%}"
 
-
+	# draw the last predicted label
+	cv2.putText(im, lastLabel, 
+	    bottomLeftCornerOfText, 
+	    font, 
+	    fontScale,
+	    fontColor,
+	    thickness,
+	    lineType)
 
 	cv2.imshow('LIVE', im)
 	key = cv2.waitKey(10)
