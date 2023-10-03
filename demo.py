@@ -29,10 +29,10 @@ width = 224
 height = width
 
 # rectangle
-x1 = 300
-y1 = x1
-x2 = x1+width
-y2 = y1+height
+x1 = 600
+y1 = 100
+x2 = x1+(width*3)
+y2 = y1+(width*3)
 
 # text
 font                   = cv2.FONT_HERSHEY_SIMPLEX
@@ -47,19 +47,19 @@ while True:
 	i+=1
 
 	(rval, im) = webcam.read()
-	im = cv2.flip(im,1,1)
 
-	cv2.rectangle(im, (300, 300), (624, 624), (224, 0, 0), 2)
-	cropped = im[y1:y2, x1:x2]
+	cv2.rectangle(im, (x1, y1), (x2, y2), (255, 0, 0), 2)
 
 	# Do a prediction every n frames
 	if (i % n == 0):
-		x = np.expand_dims(cropped, axis=0)
+		cropped = im[y1:y2, x1:x2]
+		x = cv2.resize(cropped, (width, height))
+		x = np.expand_dims(x, axis=0)
 		x = preprocess_input(x)
 	
 		# Predict
 		preds = vgg16.predict(x)
-		preds = decode_predictions(preds, top=5)[0]
+		preds = decode_predictions(preds, top=10)[0]
 		os.system('clear')
 		with Progress() as progress:
 			bars = []
